@@ -40,15 +40,15 @@ int main(void) {
 	UARTprintf("Configuring pwm...");
     UARTprintf("%u", SysCtlClockGet());
 	initSoftPWM(500,40);
-	setPWMGenFreq(1,500);
-	servo_init();
+	setPWMGenFreq(1,400);
+	//servo_init();
 //	setPWMGenFreq(2,50);
 //	setPWMGenFreq(3,100);
 //	setPWMGenFreq(4,50);
-	setSoftPWMDuty(0,1);
-	setSoftPWMDuty(1,2);
+	//setSoftPWMDuty(0,1);
+	//setSoftPWMDuty(1,2);
 	//setSoftPWMDuty(2,(47 + 14)/2);	//min 14, max 47
-	setSoftPWMDuty(3,4);
+	//setSoftPWMDuty(3,4);
 //	setSoftPWMDuty(4,5);
 //	setSoftPWMDuty(5,6);
 //	setSoftPWMDuty(6,7);
@@ -63,20 +63,21 @@ int main(void) {
 //	updateSoftPWM(3);
 //	GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_7, GPIO_PIN_7);
 
-	servo_setPosition(150);
+	enablePWM();
+//	servo_setPosition(150);
 	//
 	// Loop forever.
 	//
 	while (1)
 	{
-		servo_setPosition(60);
-//		setSoftPWMDuty(2, 23);
-		SysCtlDelay(1000*ulClockMS);
+//		servo_setPosition(60);
 ////		setSoftPWMDuty(2, 23);
-////		SysCtlDelay(500*ulClockMS);
-//		setSoftPWMDuty(2, 27);
-		servo_setPosition(30);
-		SysCtlDelay(1000*ulClockMS);
+//		SysCtlDelay(1000*ulClockMS);
+//////		setSoftPWMDuty(2, 23);
+//////		SysCtlDelay(500*ulClockMS);
+////		setSoftPWMDuty(2, 27);
+//		servo_setPosition(30);
+//		SysCtlDelay(1000*ulClockMS);
 	}
 }
 

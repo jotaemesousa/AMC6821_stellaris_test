@@ -21,7 +21,7 @@
 #include "stdint.h"
 #include "stdlib.h"
 
-#define UART_DEBUG
+//#define UART_DEBUG
 
 static const uint32_t pin_table [8] = {0, 1, 0, 1, 6, 7, 4, 6};
 static const uint32_t port_table [4] = {GPIO_PORTD_BASE, GPIO_PORTB_BASE, GPIO_PORTA_BASE, GPIO_PORTC_BASE};
@@ -95,12 +95,26 @@ uint8_t setPWMGenFreq(uint8_t generator, unsigned int freq)
 			int i;
 			for(i = 0; i < max_count[generator - 1]; i++)
 			{
-				*((lookUp_pwm[(generator - 1) * 2]) + i) = 0;
-				*((lookUp_pwm[(generator - 1) * 2 + 1]) + i) = 0;
+				lookUp_pwm[(generator - 1) * 2][i]= 0;
+				lookUp_pwm[(generator - 1) * 2 + 1][i] = 0;
 			}
 
-			*((lookUp_pwm[(generator - 1) * 2 ]) + 10) = 1;
-			*((lookUp_pwm[(generator - 1) * 2 + 1]) + 11) = 1;
+			lookUp_pwm[(generator - 1) * 2 ][10] = 1;
+			lookUp_pwm[(generator - 1) * 2 + 1][11] = 1;
+
+#ifdef UART_DEBUG
+			UARTprintf("printing tab...");
+			for(i = 0; i < max_count[generator - 1]; i++)
+			{
+				UARTprintf("%d ", lookUp_pwm[(generator - 1) * 2 ][i]);
+			}
+			UARTprintf("pr \n");
+			for(i = 0; i < max_count[generator - 1]; i++)
+						{
+							UARTprintf("%d ", lookUp_pwm[(generator - 1) * 2 +1][i]);
+						}
+			UARTprintf("done\n");
+#endif
 			return 0;
 		}
 		else
@@ -117,8 +131,8 @@ uint8_t setPWMGenFreq(uint8_t generator, unsigned int freq)
 void updateSoftPWM(unsigned char index)
 {
 //	GPIOPinWrite(GPIO_PORTD_BASE, 1 << pin_table[index], lookUp[pwm_counters[index]]);
-	GPIOPinWrite(GPIO_PORTD_BASE, 1 << pin_table[index<<2], *((lookUp_pwm[index<<2]) + pwm_counters[index]));
-	GPIOPinWrite(GPIO_PORTD_BASE, 1 << pin_table[(index<<2) + 1], *((lookUp_pwm[(index << 2) + 1]) + pwm_counters[index]));
+	GPIOPinWrite(port_table[index], 1 << pin_table[index<<1], (lookUp_pwm[index<<1][pwm_counters[index]])<< pin_table[index<<1]);
+	GPIOPinWrite(port_table[index], 1 << pin_table[(index<<1) + 1], (lookUp_pwm[(index << 1) + 1][pwm_counters[index]])<< pin_table[(index<<1)+1]);
 	pwm_counters[index] = (pwm_counters[index] + 1) % max_count[index];
 
 #ifdef UART_DEBUG

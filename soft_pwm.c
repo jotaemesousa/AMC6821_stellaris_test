@@ -142,11 +142,9 @@ void updateSoftPWM(unsigned char index)
 	uint32_t pin2 = pin_table[index21];
 	uint32_t value1 = (lookUp_pwm[index2][pwm_counters[index]])<< pin_table_index[index2];
 	uint32_t value2 = (lookUp_pwm[index21][pwm_counters[index]])<< pin_table_index[index21];
-//	GPIOPinWrite(GPIO_PORTD_BASE, 1 << pin_table[index], lookUp[pwm_counters[index]]);
-//	GPIOPinWrite(port_table[index], 1 << pin_table[index<<1], (lookUp_pwm[index<<1][pwm_counters[index]])<< pin_table[index<<1]);
-//	GPIOPinWrite(port_table[index], 1 << pin_table[(index<<1) + 1], (lookUp_pwm[(index << 1) + 1][pwm_counters[index]])<< pin_table[(index<<1)+1]);
+
 	HWREG(GPIO_PORTD_AHB_BASE + GPIO_O_DATA + ((pin1 + pin2) << 2)) = (value1 + value2);  //portb7 low
-	//HWREG(port_table[index] + GPIO_O_DATA + (pin1 | pin2) << 2) = (pin1 | pin2);
+
 	pwm_counters[index] = (pwm_counters[index] + 1) % max_count[index];
 
 #ifdef UART_DEBUG
@@ -209,16 +207,7 @@ void Timer0IntHandler(void)
 //
 //		}
 //	}
-//	uint32_t index2 = i << 1;
-//					uint32_t index21 = (i << 1) + 1;
-//					uint32_t pin1 = pin_table[index2];
-//					uint32_t pin2 = pin_table[index21];
-//				//	GPIOPinWrite(GPIO_PORTD_BASE, 1 << pin_table[index], lookUp[pwm_counters[index]]);
-//				//	GPIOPinWrite(port_table[index], 1 << pin_table[index<<1], (lookUp_pwm[index<<1][pwm_counters[index]])<< pin_table[index<<1]);
-//				//	GPIOPinWrite(port_table[index], 1 << pin_table[(index<<1) + 1], (lookUp_pwm[(index << 1) + 1][pwm_counters[index]])<< pin_table[(index<<1)+1]);
-//					HWREG(GPIO_PORTD_AHB_BASE + GPIO_O_DATA + ((GPIO_PIN_0 + GPIO_PIN_1) << 2)) = (GPIO_PIN_0 +GPIO_PIN_1);  //portb7 low
-//					//HWREG(port_table[index] + GPIO_O_DATA + (pin1 | pin2) << 2) = (pin1 | pin2);
-//					pwm_counters[i] = (pwm_counters[i] + 1) % max_count[i];
+
 	HWREG(GPIO_PORTB_AHB_BASE + GPIO_O_DATA + ((GPIO_PIN_7 ) << 2)) = (0 );  //portb7 low
 	//HWREG(GPIO_PORTD_AHB_BASE + GPIO_O_DATA + ((GPIO_PIN_0 ) << 2)) = (0 );  //portb7 low
 }

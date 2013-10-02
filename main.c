@@ -2,6 +2,9 @@
 #include <inc/hw_types.h>
 #include <inc/hw_memmap.h>
 #include <inc/hw_ints.h>
+#include <inc/hw_gpio.h>
+#include <driverlib/rom.h>
+#include <driverlib/rom_map.h>
 #include <driverlib/debug.h>
 #include <driverlib/sysctl.h>
 #include <driverlib/systick.h>
@@ -83,8 +86,12 @@ int main(void) {
 
 void ConfigureGPIO(void)
 {
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
-	GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_7);
-	//GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_7, GPIO_PIN_7);
+	MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); // enable port
+	MAP_SysCtlGPIOAHBEnable(SYSCTL_PERIPH_GPIOB); //enable ahb
+
+	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTB_AHB_BASE,GPIO_PIN_7); // portb as output
+	HWREG(GPIO_PORTB_AHB_BASE + GPIO_O_DATA + ((GPIO_PIN_7 ) << 2)) = (GPIO_PIN_7 );  //portb high
+
+
 }
 

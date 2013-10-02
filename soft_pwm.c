@@ -7,7 +7,11 @@
 #include <inc/lm3s5749.h>
 #include <inc/hw_types.h>
 #include <inc/hw_memmap.h>
+#include <inc/hw_timer.h>
 #include <inc/hw_ints.h>
+#include <inc/hw_gpio.h>
+#include <driverlib/rom.h>
+#include <driverlib/rom_map.h>
 #include <driverlib/debug.h>
 #include <driverlib/sysctl.h>
 #include <driverlib/systick.h>
@@ -23,8 +27,9 @@
 
 //#define UART_DEBUG
 
-static const uint32_t pin_table [8] = {0, 1, 0, 1, 6, 7, 4, 6};
-static const uint32_t port_table [4] = {GPIO_PORTD_BASE, GPIO_PORTB_BASE, GPIO_PORTA_BASE, GPIO_PORTC_BASE};
+static const uint32_t pin_table [8] = {GPIO_PIN_0, GPIO_PIN_1, GPIO_PIN_0, GPIO_PIN_1, GPIO_PIN_6, GPIO_PIN_7, GPIO_PIN_4, GPIO_PIN_6};
+static const uint32_t pin_table_index [8] = {0, 1, 0, 1, 6, 7, 4, 6};
+static const uint32_t port_table [4] = {GPIO_PORTD_AHB_BASE, GPIO_PORTB_AHB_BASE, GPIO_PORTA_AHB_BASE, GPIO_PORTC_AHB_BASE};
 static const uint32_t periph_table [4] = {SYSCTL_PERIPH_GPIOD, SYSCTL_PERIPH_GPIOB, SYSCTL_PERIPH_GPIOA, SYSCTL_PERIPH_GPIOC};
 
 uint8_t lookUp[50];
@@ -86,8 +91,9 @@ uint8_t setPWMGenFreq(uint8_t generator, unsigned int freq)
 			UARTprintf("Freq = %u, min_res = %u\n", max_pwm_freq, min_pwm_res);
 			UARTprintf("port = %x, pin = %x\n", port_table[generator - 1], (1 << pin_table[(generator - 1) * 2]) | (1 << pin_table[(generator - 1) * 2 + 1]));
 #endif
-			SysCtlPeripheralEnable(periph_table[generator - 1]);
-			GPIOPinTypeGPIOOutput(port_table[generator - 1], (1 << pin_table[(generator - 1) * 2]) | (1 << pin_table[(generator - 1) * 2 + 1]));
+			MAP_SysCtlPeripheralEnable(periph_table[generator - 1]);
+			MAP_SysCtlGPIOAHBEnable(periph_table[generator - 1]);
+			MAP_GPIOPinTypeGPIOOutput(port_table[generator - 1], (pin_table[(generator - 1) * 2]) | (pin_table[(generator - 1) * 2 + 1]));
 
 			lookUp_pwm[(generator - 1) * 2] = (uint8_t *)malloc(max_count[generator - 1]);
 			lookUp_pwm[(generator - 1) * 2 + 1] = (uint8_t *)malloc(max_count[generator - 1]);
@@ -130,9 +136,17 @@ uint8_t setPWMGenFreq(uint8_t generator, unsigned int freq)
 
 void updateSoftPWM(unsigned char index)
 {
+	uint32_t index2 = index << 1;
+	uint32_t index21 = (index << 1) + 1;
+	uint32_t pin1 = pin_table[index2];
+	uint32_t pin2 = pin_table[index21];
+	uint32_t value1 = (lookUp_pwm[index2][pwm_counters[index]])<< pin_table_index[index2];
+	uint32_t value2 = (lookUp_pwm[index21][pwm_counters[index]])<< pin_table_index[index21];
 //	GPIOPinWrite(GPIO_PORTD_BASE, 1 << pin_table[index], lookUp[pwm_counters[index]]);
-	GPIOPinWrite(port_table[index], 1 << pin_table[index<<1], (lookUp_pwm[index<<1][pwm_counters[index]])<< pin_table[index<<1]);
-	GPIOPinWrite(port_table[index], 1 << pin_table[(index<<1) + 1], (lookUp_pwm[(index << 1) + 1][pwm_counters[index]])<< pin_table[(index<<1)+1]);
+//	GPIOPinWrite(port_table[index], 1 << pin_table[index<<1], (lookUp_pwm[index<<1][pwm_counters[index]])<< pin_table[index<<1]);
+//	GPIOPinWrite(port_table[index], 1 << pin_table[(index<<1) + 1], (lookUp_pwm[(index << 1) + 1][pwm_counters[index]])<< pin_table[(index<<1)+1]);
+	HWREG(GPIO_PORTD_AHB_BASE + GPIO_O_DATA + ((pin1 + pin2) << 2)) = (value1 + value2);  //portb7 low
+	//HWREG(port_table[index] + GPIO_O_DATA + (pin1 | pin2) << 2) = (pin1 | pin2);
 	pwm_counters[index] = (pwm_counters[index] + 1) % max_count[index];
 
 #ifdef UART_DEBUG
@@ -180,18 +194,32 @@ int32_t getSoftPWMPeriod(uint8_t generator)
 
 void Timer0IntHandler(void)
 {
-	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+	HWREG(TIMER0_BASE + TIMER_O_ICR) = TIMER_TIMA_TIMEOUT;
+	//TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 
-	GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_7, GPIO_PIN_7);
-	unsigned char i;
-	for(i = 0; i < MAX_PWM_GENERATORS; i++)
-	{
-		if(config_done[i])
-		{
-			updateSoftPWM(i);
-		}
-	}
-	GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_7, 0);
-
+	HWREG(GPIO_PORTB_AHB_BASE + GPIO_O_DATA + ((GPIO_PIN_7 ) << 2)) = (GPIO_PIN_7 );  //portb7 high
+	//HWREG(GPIO_PORTD_AHB_BASE + GPIO_O_DATA + ((GPIO_PIN_0 ) << 2)) = (GPIO_PIN_0 );  //portb7 low
+	unsigned char i= 0;
+	updateSoftPWM(0);
+//	for(i = 0; i < MAX_PWM_GENERATORS; i++)
+//	{
+//		if(config_done[i])
+//		{
+//			updateSoftPWM(i);
+//
+//		}
+//	}
+//	uint32_t index2 = i << 1;
+//					uint32_t index21 = (i << 1) + 1;
+//					uint32_t pin1 = pin_table[index2];
+//					uint32_t pin2 = pin_table[index21];
+//				//	GPIOPinWrite(GPIO_PORTD_BASE, 1 << pin_table[index], lookUp[pwm_counters[index]]);
+//				//	GPIOPinWrite(port_table[index], 1 << pin_table[index<<1], (lookUp_pwm[index<<1][pwm_counters[index]])<< pin_table[index<<1]);
+//				//	GPIOPinWrite(port_table[index], 1 << pin_table[(index<<1) + 1], (lookUp_pwm[(index << 1) + 1][pwm_counters[index]])<< pin_table[(index<<1)+1]);
+//					HWREG(GPIO_PORTD_AHB_BASE + GPIO_O_DATA + ((GPIO_PIN_0 + GPIO_PIN_1) << 2)) = (GPIO_PIN_0 +GPIO_PIN_1);  //portb7 low
+//					//HWREG(port_table[index] + GPIO_O_DATA + (pin1 | pin2) << 2) = (pin1 | pin2);
+//					pwm_counters[i] = (pwm_counters[i] + 1) % max_count[i];
+	HWREG(GPIO_PORTB_AHB_BASE + GPIO_O_DATA + ((GPIO_PIN_7 ) << 2)) = (0 );  //portb7 low
+	//HWREG(GPIO_PORTD_AHB_BASE + GPIO_O_DATA + ((GPIO_PIN_0 ) << 2)) = (0 );  //portb7 low
 }
 

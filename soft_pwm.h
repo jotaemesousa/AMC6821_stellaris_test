@@ -25,7 +25,7 @@ uint8_t *lookUp_pwm[MAX_PWM_GENERATORS*2];
 void initSoftPWM(unsigned int max_freq, unsigned int res_min);
 void enablePWM(void);
 uint8_t setPWMGenFreq(uint8_t generator, unsigned int freq);
-void updateSoftPWM(unsigned char index);
+void  updateSoftPWM(unsigned char index);
 uint8_t setSoftPWMDuty(uint8_t generator, unsigned long int dcycle);
 int32_t getSoftPWMPeriod(uint8_t generator);
 

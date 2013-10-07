@@ -32,8 +32,6 @@ static const uint32_t pin_table_index [8] = {0, 1, 0, 1, 6, 7, 4, 6};
 static const uint32_t port_table [4] = {GPIO_PORTD_AHB_BASE, GPIO_PORTB_AHB_BASE, GPIO_PORTA_AHB_BASE, GPIO_PORTC_AHB_BASE};
 static const uint32_t periph_table [4] = {SYSCTL_PERIPH_GPIOD, SYSCTL_PERIPH_GPIOB, SYSCTL_PERIPH_GPIOA, SYSCTL_PERIPH_GPIOC};
 
-uint8_t lookUp[50];
-
 
 void initSoftPWM(unsigned int max_freq, unsigned int res_min)
 {
@@ -98,15 +96,8 @@ uint8_t setPWMGenFreq(uint8_t generator, unsigned int freq)
 			lookUp_pwm[(generator - 1) * 2] = (uint8_t *)malloc(max_count[generator - 1]);
 			lookUp_pwm[(generator - 1) * 2 + 1] = (uint8_t *)malloc(max_count[generator - 1]);
 
-			int i;
-			for(i = 0; i < max_count[generator - 1]; i++)
-			{
-				lookUp_pwm[(generator - 1) * 2][i]= 0;
-				lookUp_pwm[(generator - 1) * 2 + 1][i] = 0;
-			}
-
-			lookUp_pwm[(generator - 1) * 2 ][10] = 1;
-			lookUp_pwm[(generator - 1) * 2 + 1][11] = 1;
+			setSoftPWMDuty((generator - 1) * 2, 0);
+			setSoftPWMDuty((generator - 1) * 2 + 1, 0);
 
 #ifdef UART_DEBUG
 			UARTprintf("printing tab...");
@@ -158,17 +149,18 @@ uint8_t setSoftPWMDuty(uint8_t pwm, unsigned long int dcycle)
 	{
 		if(dcycle < getSoftPWMPeriod(pwm/2 + 1) && dcycle >= 0)
 		{
-			compare_value[pwm] = dcycle;
+			memset(lookUp_pwm[pwm], 1, dcycle* sizeof(lookUp_pwm));
+			memset(lookUp_pwm[pwm] + dcycle , 0, (max_count[pwm/2] - 1 - dcycle) * sizeof(lookUp_pwm));
 			return 0;
 		}
 		else if(dcycle >= getSoftPWMPeriod(pwm/2 + 1))
 		{
-			compare_value[pwm] = 0;
+			memset(lookUp_pwm[pwm], 1, dcycle* max_count[pwm/2]);
 			return 1;
 		}
 		else
 		{
-			compare_value[pwm] = 0;
+			memset(lookUp_pwm[pwm], 0, dcycle* max_count[pwm/2]);
 			return 2;
 		}
 	}

@@ -48,8 +48,8 @@ int main(void) {
 //	setPWMGenFreq(2,50);
 //	setPWMGenFreq(3,100);
 //	setPWMGenFreq(4,50);
-	//setSoftPWMDuty(0,1);
-	//setSoftPWMDuty(1,2);
+	setSoftPWMDuty(0,0);
+	setSoftPWMDuty(1,2);
 	//setSoftPWMDuty(2,(47 + 14)/2);	//min 14, max 47
 	//setSoftPWMDuty(3,4);
 //	setSoftPWMDuty(4,5);

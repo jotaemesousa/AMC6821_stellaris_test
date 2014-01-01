@@ -37,9 +37,9 @@ void ConfigureGPIO(void);
 
 typedef struct ROSpberryRemote
 {
-        int16_t linear;
-        int16_t steer;
-        uint8_t buttons;
+	int16_t linear;
+	int16_t steer;
+	uint8_t buttons;
 
 }RC_remote;
 
@@ -63,78 +63,68 @@ int main(void) {
 
 	RF24 radio = RF24();
 
-	        // Radio pipe addresses for the 2 nodes to communicate.
-	        const uint64_t pipes[3] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL, 0xF0F0F0F0C3LL};
+	// Radio pipe addresses for the 2 nodes to communicate.
+	const uint64_t pipes[3] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL, 0xF0F0F0F0C3LL};
 
-	        // Setup and configure rf radio
-	        radio.begin();
+	// Setup and configure rf radio
+	radio.begin();
 
-	        // optionally, increase the delay between retries & # of retries
-	        radio.setRetries(15,15);
+	// optionally, increase the delay between retries & # of retries
+	radio.setRetries(15,15);
 
-	        // optionally, reduce the payload size.  seems to
-	        // improve reliability
-	        radio.setPayloadSize(sizeof(RC_remote));
+	// optionally, reduce the payload size.  seems to
+	// improve reliability
+	radio.setPayloadSize(sizeof(RC_remote));
 
-	        radio.setDataRate(RF24_250KBPS);
+	radio.setDataRate(RF24_250KBPS);
 
-	        // Open pipes to other nodes for communication
-	        radio.openWritingPipe(pipes[1]);
-	        radio.openReadingPipe(1,pipes[0]);
+	// Open pipes to other nodes for communication
+	radio.openWritingPipe(pipes[1]);
+	radio.openReadingPipe(1,pipes[0]);
 
-	        // Start listening
-	        radio.startListening();
+	// Start listening
+	radio.startListening();
 
-	#ifdef DEBUG
-	        // Dump the configuration of the rf unit for debugging
-	        radio.printDetails();
-	#endif
+	// Dump the configuration of the rf unit for debugging
+	radio.printDetails();
 
-
+	radio.stopListening();
+	radio.startListening();
 
 	UARTprintf("done\n");
 
 	UARTprintf("Configuring pwm...");
-    UARTprintf("%u", SysCtlClockGet());
-	initSoftPWM(500,40);
-	setPWMGenFreq(1,400);
-	//servo_init();
-//	setPWMGenFreq(2,50);
-//	setPWMGenFreq(3,100);
-//	setPWMGenFreq(4,50);
-	setSoftPWMDuty(0,0);
-	setSoftPWMDuty(1,2);
-	//setSoftPWMDuty(2,(47 + 14)/2);	//min 14, max 47
-	//setSoftPWMDuty(3,4);
-//	setSoftPWMDuty(4,5);
-//	setSoftPWMDuty(5,6);
-//	setSoftPWMDuty(6,7);
-//	setSoftPWMDuty(7,8);
-//	setPWMGenFreq(2,500);
-//	setPWMGenFreq(3,500);
-//	setPWMGenFreq(4,500);
-//	UARTprintf("done\n");
-//	updateSoftPWM(0);
-//	updateSoftPWM(1);
-//	updateSoftPWM(2);
-//	updateSoftPWM(3);
-//	GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_7, GPIO_PIN_7);
+	UARTprintf("%u", SysCtlClockGet());
 
+	initSoftPWM(500,40);
+	servo_init();
 	enablePWM();
-//	servo_setPosition(150);
+	RC_remote ferrari;
 	//
 	// Loop forever.
 	//
 	while (1)
 	{
-//		servo_setPosition(60);
-////		setSoftPWMDuty(2, 23);
-//		SysCtlDelay(1000*ulClockMS);
-//////		setSoftPWMDuty(2, 23);
-//////		SysCtlDelay(500*ulClockMS);
-////		setSoftPWMDuty(2, 27);
-//		servo_setPosition(30);
-//		SysCtlDelay(1000*ulClockMS);
+
+		// if there is data ready
+		if ( radio.available() )
+		{
+			bool done = false;
+			while (!done)
+			{
+
+				// Fetch the payload, and see if this was the last one.
+				done = radio.read( &ferrari, sizeof(RC_remote));
+
+				if(done)
+				{
+					//UARTprintf("rec %d\n", ferrari.steer);
+					servo_setPosition((ferrari.steer + 127) / 2);
+
+
+				}
+			}
+		}
 	}
 }
 

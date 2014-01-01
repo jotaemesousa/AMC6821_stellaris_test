@@ -134,7 +134,7 @@ void updateSoftPWM(unsigned char index)
 	uint32_t value1 = (lookUp_pwm[index2][pwm_counters[index]])<< pin_table_index[index2];
 	uint32_t value2 = (lookUp_pwm[index21][pwm_counters[index]])<< pin_table_index[index21];
 
-	HWREG(GPIO_PORTD_AHB_BASE + GPIO_O_DATA + ((pin1 + pin2) << 2)) = (value1 + value2);  //portb7 low
+	HWREG(port_table[index] + GPIO_O_DATA + ((pin1 + pin2) << 2)) = (value1 + value2);  //portb7 low
 
 	pwm_counters[index] = (pwm_counters[index] + 1) % max_count[index];
 
@@ -190,7 +190,7 @@ void Timer0IntHandler(void)
 	HWREG(GPIO_PORTB_AHB_BASE + GPIO_O_DATA + ((GPIO_PIN_7 ) << 2)) = (GPIO_PIN_7 );  //portb7 high
 	//HWREG(GPIO_PORTD_AHB_BASE + GPIO_O_DATA + ((GPIO_PIN_0 ) << 2)) = (GPIO_PIN_0 );  //portb7 low
 	unsigned char i= 0;
-	updateSoftPWM(0);
+	updateSoftPWM(1);
 //	for(i = 0; i < MAX_PWM_GENERATORS; i++)
 //	{
 //		if(config_done[i])

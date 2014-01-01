@@ -1,3 +1,5 @@
+extern "C"
+{
 #include <inc/lm3s5749.h>
 #include <inc/hw_types.h>
 #include <inc/hw_memmap.h>
@@ -16,12 +18,30 @@
 #include "soft_pwm.h"
 #include "stdbool.h"
 #include "servo.h"
+}
 
-static unsigned long ulClockMS = 0;
+#include "rf24/RF24.h"
 
+extern "C"
+{
+void SysTickHandler();
+uint32_t millis();
+}
+
+static unsigned long milliSec = 0;
+
+
+static unsigned long ulClockMS=0;
 
 void ConfigureGPIO(void);
 
+typedef struct ROSpberryRemote
+{
+        int16_t linear;
+        int16_t steer;
+        uint8_t buttons;
+
+}RC_remote;
 
 int main(void) {
 	//SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_12MHZ);
@@ -39,6 +59,40 @@ int main(void) {
 	ConfigureGPIO();
 	UARTprintf("done\n");
 
+	UARTprintf("Configuring NRF24L01...");
+
+	RF24 radio = RF24();
+
+	        // Radio pipe addresses for the 2 nodes to communicate.
+	        const uint64_t pipes[3] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL, 0xF0F0F0F0C3LL};
+
+	        // Setup and configure rf radio
+	        radio.begin();
+
+	        // optionally, increase the delay between retries & # of retries
+	        radio.setRetries(15,15);
+
+	        // optionally, reduce the payload size.  seems to
+	        // improve reliability
+	        radio.setPayloadSize(sizeof(RC_remote));
+
+	        radio.setDataRate(RF24_250KBPS);
+
+	        // Open pipes to other nodes for communication
+	        radio.openWritingPipe(pipes[1]);
+	        radio.openReadingPipe(1,pipes[0]);
+
+	        // Start listening
+	        radio.startListening();
+
+	#ifdef DEBUG
+	        // Dump the configuration of the rf unit for debugging
+	        radio.printDetails();
+	#endif
+
+
+
+	UARTprintf("done\n");
 
 	UARTprintf("Configuring pwm...");
     UARTprintf("%u", SysCtlClockGet());
@@ -95,3 +149,13 @@ void ConfigureGPIO(void)
 
 }
 
+void SysTickHandler()
+{
+	milliSec++;
+
+}
+
+uint32_t millis()
+{
+	return milliSec;
+}

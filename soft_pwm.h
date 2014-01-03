@@ -20,7 +20,7 @@ unsigned long int max_count[MAX_PWM_GENERATORS];
 unsigned long int pwm_counters[MAX_PWM_GENERATORS];
 unsigned char config_done[MAX_PWM_GENERATORS];
 
-uint8_t *lookUp_pwm1[MAX_PWM_GENERATORS*2];
+uint8_t *lookUp_pwm[MAX_PWM_GENERATORS*2];
 uint8_t *lookUp_pwm2[MAX_PWM_GENERATORS*2];
 
 uint8_t **actual_buffer;

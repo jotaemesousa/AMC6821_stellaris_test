@@ -32,6 +32,8 @@ static const uint32_t pin_table_index [8] = {0, 1, 0, 1, 6, 7, 4, 6};
 static const uint32_t port_table [4] = {GPIO_PORTD_AHB_BASE, GPIO_PORTB_AHB_BASE, GPIO_PORTA_AHB_BASE, GPIO_PORTC_AHB_BASE};
 static const uint32_t periph_table [4] = {SYSCTL_PERIPH_GPIOD, SYSCTL_PERIPH_GPIOB, SYSCTL_PERIPH_GPIOA, SYSCTL_PERIPH_GPIOC};
 
+uint32_t lastDutyCycle[MAX_PWM_GENERATORS*2];
+
 
 void initSoftPWM(unsigned int max_freq, unsigned int res_min)
 {
@@ -96,8 +98,10 @@ uint8_t setPWMGenFreq(uint8_t generator, unsigned int freq)
 			lookUp_pwm[(generator - 1) * 2] = (uint8_t *)malloc(max_count[generator - 1]);
 			lookUp_pwm[(generator - 1) * 2 + 1] = (uint8_t *)malloc(max_count[generator - 1]);
 
-			setSoftPWMDuty((generator - 1) * 2, 0);
-			setSoftPWMDuty((generator - 1) * 2 + 1, 0);
+			memset(lookUp_pwm[(generator - 1) * 2], 0, max_count[generator - 1]);
+			memset(lookUp_pwm[(generator - 1) * 2 + 1], 0, max_count[generator - 1]);
+			lastDutyCycle[(generator - 1) * 2] = 0;
+			lastDutyCycle[(generator - 1) * 2 + 1] = 0;
 
 #ifdef UART_DEBUG
 			UARTprintf("printing tab...");
@@ -107,9 +111,9 @@ uint8_t setPWMGenFreq(uint8_t generator, unsigned int freq)
 			}
 			UARTprintf("pr \n");
 			for(i = 0; i < max_count[generator - 1]; i++)
-						{
-							UARTprintf("%d ", lookUp_pwm[(generator - 1) * 2 +1][i]);
-						}
+			{
+				UARTprintf("%d ", lookUp_pwm[(generator - 1) * 2 +1][i]);
+			}
 			UARTprintf("done\n");
 #endif
 			return 0;
@@ -149,18 +153,46 @@ uint8_t setSoftPWMDuty(uint8_t pwm, unsigned long int dcycle)
 	{
 		if(dcycle < getSoftPWMPeriod(pwm/2 + 1) && dcycle >= 0)
 		{
-			memset(lookUp_pwm[pwm], 1, dcycle* sizeof(lookUp_pwm));
-			memset(lookUp_pwm[pwm] + dcycle , 0, (max_count[pwm/2] - 1 - dcycle) * sizeof(lookUp_pwm));
+			if(dcycle < lastDutyCycle[pwm])
+			{
+				int32_t i;
+				for(i = lastDutyCycle[pwm]; i >= dcycle; i--)
+				{
+					lookUp_pwm[pwm][i] = 0;
+				}
+			}
+			else if(dcycle > lastDutyCycle[pwm])
+			{
+				int32_t i;
+				for(i = lastDutyCycle[pwm]; i <= dcycle - 1; i++)
+				{
+					lookUp_pwm[pwm][i] = 1;
+				}
+			}
+			lastDutyCycle[pwm] = dcycle;
 			return 0;
 		}
 		else if(dcycle >= getSoftPWMPeriod(pwm/2 + 1))
 		{
-			memset(lookUp_pwm[pwm], 1, dcycle* max_count[pwm/2]);
+			int32_t i;
+			for(i = lastDutyCycle[pwm]; i < getSoftPWMPeriod(pwm/2 + 1); i++)
+			{
+				lookUp_pwm[pwm][i] = 1;
+			}
+
+			lastDutyCycle[pwm] = dcycle;
 			return 1;
 		}
 		else
 		{
-			memset(lookUp_pwm[pwm], 0, dcycle* max_count[pwm/2]);
+			int32_t i;
+			for(i = lastDutyCycle[pwm]; i >= 0; i--)
+			{
+				lookUp_pwm[pwm][i] = 0;
+			}
+
+			lastDutyCycle[pwm] = dcycle;
+			//			memset(lookUp_pwm[pwm], 0, dcycle* max_count[pwm/2]);
 			return 2;
 		}
 	}
@@ -191,14 +223,14 @@ void Timer0IntHandler(void)
 	//HWREG(GPIO_PORTD_AHB_BASE + GPIO_O_DATA + ((GPIO_PIN_0 ) << 2)) = (GPIO_PIN_0 );  //portb7 low
 	unsigned char i= 0;
 	updateSoftPWM(1);
-//	for(i = 0; i < MAX_PWM_GENERATORS; i++)
-//	{
-//		if(config_done[i])
-//		{
-//			updateSoftPWM(i);
-//
-//		}
-//	}
+	//	for(i = 0; i < MAX_PWM_GENERATORS; i++)
+	//	{
+	//		if(config_done[i])
+	//		{
+	//			updateSoftPWM(i);
+	//
+	//		}
+	//	}
 
 	HWREG(GPIO_PORTB_AHB_BASE + GPIO_O_DATA + ((GPIO_PIN_7 ) << 2)) = (0 );  //portb7 low
 	//HWREG(GPIO_PORTD_AHB_BASE + GPIO_O_DATA + ((GPIO_PIN_0 ) << 2)) = (0 );  //portb7 low

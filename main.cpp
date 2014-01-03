@@ -99,6 +99,7 @@ int main(void) {
 	initSoftPWM(500,40);
 	servo_init();
 	enablePWM();
+	servo_setPosition(90);
 	RC_remote ferrari;
 	//
 	// Loop forever.

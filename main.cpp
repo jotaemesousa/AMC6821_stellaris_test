@@ -21,6 +21,7 @@ extern "C"
 }
 
 #include "rf24/RF24.h"
+#include "libraries/AMC6821/AMC6821.h"
 
 extern "C"
 {
@@ -55,77 +56,59 @@ int main(void) {
 	GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 	UARTStdioInit(0);
 
-	UARTprintf("Configuring GPIO...");
-	ConfigureGPIO();
-	UARTprintf("done\n");
+//	UARTprintf("Configuring GPIO...");
+//	//ConfigureGPIO();
+//	UARTprintf("done\n");
 
-	UARTprintf("Configuring NRF24L01...");
+	UARTprintf("Setting up I2C\n");
 
-	RF24 radio = RF24();
-
-	// Radio pipe addresses for the 2 nodes to communicate.
-	const uint64_t pipes[3] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL, 0xF0F0F0F0C3LL};
-
-	// Setup and configure rf radio
-	radio.begin();
-
-	// optionally, increase the delay between retries & # of retries
-	radio.setRetries(15,15);
-
-	// optionally, reduce the payload size.  seems to
-	// improve reliability
-	radio.setPayloadSize(sizeof(RC_remote));
-
-	radio.setDataRate(RF24_250KBPS);
-
-	// Open pipes to other nodes for communication
-	radio.openWritingPipe(pipes[1]);
-	radio.openReadingPipe(1,pipes[0]);
-
-	// Start listening
-	radio.startListening();
-
-	// Dump the configuration of the rf unit for debugging
-	radio.printDetails();
-
-	radio.stopListening();
-	radio.startListening();
+	//I2C
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C0);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+	GPIOPinTypeI2C(GPIO_PORTB_BASE,GPIO_PIN_2 | GPIO_PIN_3);
+	I2CMasterInitExpClk(I2C0_MASTER_BASE,SysCtlClockGet(),false);  //false = 100khz , true = 400khz
+	I2CMasterTimeoutSet(I2C0_MASTER_BASE, 1000);
 
 	UARTprintf("done\n");
 
-	UARTprintf("Configuring pwm...");
-	UARTprintf("%u", SysCtlClockGet());
+	UARTprintf("Fan controller...");
 
-	initSoftPWM(500,40);
-	servo_init();
-	enablePWM();
-	servo_setPosition(90);
-	RC_remote ferrari;
-	//
+	AMC6821 fan_ctl(0b00011000);
+
+//	fan_ctl.setPWMINV();
+	fan_ctl.reset();
+	SysCtlDelay(1000*ulClockMS);
+	fan_ctl.setPWMINV();
+	fan_ctl.setSTART(true);
+	int f;
+	f = fan_ctl.getPWM();
+	//fan_ctl.setDCY(0);
+	fan_ctl.setFDRC(amc6821_fdrc_software_rpm);
+	fan_ctl.setPSV(20);
+
+	UARTprintf("done\n");
+
 	// Loop forever.
 	//
+	uint16_t lbyte = 0;
+	uint16_t local_temp = 0;
+	uint16_t remote_temp = 0;
+	uint16_t x = 0;
 	while (1)
 	{
+		fan_ctl.readTemp11bits(local_temp, remote_temp);
 
-		// if there is data ready
-		if ( radio.available() )
-		{
-			bool done = false;
-			while (!done)
-			{
+		UARTprintf("local tem = %d.%d, remote temp = %d.%d\n", local_temp>>3, (local_temp & 0x0007)*1000/8, remote_temp>>3, (remote_temp & 0x0007)*1000/8);
 
-				// Fetch the payload, and see if this was the last one.
-				done = radio.read( &ferrari, sizeof(RC_remote));
+		x = fan_ctl.readRPM();
+		UARTprintf("rpm = %d\n", x);
+		SysCtlDelay(1000*ulClockMS);
 
-				if(done)
-				{
-					//UARTprintf("rec %d\n", ferrari.steer);
-					servo_setPosition((ferrari.steer + 127) / 2);
+//		fan_ctl.setPWM((amc6821_pwm_frequency)1);
+//		x = fan_ctl.getPWM();
+//		SysCtlDelay(1000*ulClockMS);
+//		UARTprintf("PWM = %u\n", x);
 
-
-				}
-			}
-		}
 	}
 }
 

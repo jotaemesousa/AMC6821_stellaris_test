@@ -94,6 +94,17 @@ int main(void) {
 	uint16_t local_temp = 0;
 	uint16_t remote_temp = 0;
 	uint16_t x = 0;
+
+	fan_ctl.setDCYLT(0);
+	fan_ctl.setRPM(800);
+
+	fan_ctl.setTachHighLimit(2000);
+	fan_ctl.setTachLowLimit(0);
+
+	uint16_t l_limit = fan_ctl.getTachLowLimit();
+	uint16_t h_limit = fan_ctl.getTachHighLimit();
+	UARTprintf("l_limit = %d, h_limit = %d\n", l_limit, h_limit);
+
 	while (1)
 	{
 		fan_ctl.readTemp11bits(local_temp, remote_temp);

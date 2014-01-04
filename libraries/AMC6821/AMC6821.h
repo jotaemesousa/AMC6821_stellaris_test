@@ -150,8 +150,13 @@ class AMC6821
 
 
     void readTemp11bits(uint16_t &local_temp, uint16_t &remote_temp);
-    //
     
+
+    void setTachLowLimit(uint16_t limit);
+    void setTachHighLimit(uint16_t limit);
+    uint16_t getTachLowLimit(void);
+    uint16_t getTachHighLimit(void);
+
     // int16_t readSpeed( fan_control_tach_t fct );
     uint32_t readRPM(void);
     void setRPM(uint16_t rpm);
@@ -166,7 +171,7 @@ class AMC6821
     static uint8_t read1(uint8_t addr, uint8_t reg);
     static void read_n(uint8_t addr, uint8_t reg, uint8_t n_bytes, uint8_t *out);
     static void write1(uint8_t addr, uint8_t reg, uint8_t data); 
-    static void write_n(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t n_bytes);
+    static void write_n(uint8_t addr, uint8_t reg, uint8_t n_bytes, uint8_t *data);
 };
 
 extern AMC6821 amc6821;

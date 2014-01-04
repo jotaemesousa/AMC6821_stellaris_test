@@ -360,7 +360,37 @@ void AMC6821::setRPM(uint16_t rpm)
 	tach[0] = tach_val & 0xFF;
 	tach[1] = (tach_val >> 8) & 0xFF;
 
-	write_n(_addr, AMC6821_REG_TACH_SETTINGL, tach, 2);
+	write_n(_addr, AMC6821_REG_TACH_SETTINGL, 2, tach);
+}
+
+void AMC6821::setTachLowLimit(uint16_t limit)
+{
+	uint8_t tach_lim[2];
+	tach_lim[0] = limit & 0xFF;
+	tach_lim[1] = (limit >> 8) & 0xFF;
+	write_n(_addr, AMC6821_REG_TACH_LLIMITL, 2, tach_lim);
+}
+
+void AMC6821::setTachHighLimit(uint16_t limit)
+{
+	uint8_t tach_lim[2];
+	tach_lim[0] = limit & 0xFF;
+	tach_lim[1] = (limit >> 8) & 0xFF;
+	write_n(_addr, AMC6821_REG_TACH_HLIMITL, 2, tach_lim);
+}
+
+uint16_t AMC6821::getTachLowLimit(void)
+{
+	uint8_t tach_lim[2];
+	read_n(_addr, AMC6821_REG_TACH_LLIMITL, 2, tach_lim);
+	return (tach_lim[0] | (tach_lim[1] << 8));
+}
+
+uint16_t AMC6821::getTachHighLimit(void)
+{
+	uint8_t tach_lim[2];
+	read_n(_addr, AMC6821_REG_TACH_HLIMITL, 2, tach_lim);
+	return (tach_lim[0] | (tach_lim[1] << 8));
 }
 
 /*
@@ -477,7 +507,7 @@ void AMC6821::write1(uint8_t addr, uint8_t reg, uint8_t data)
 #endif
 }
 
-void AMC6821::write_n(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t n_bytes)
+void AMC6821::write_n(uint8_t addr, uint8_t reg, uint8_t n_bytes, uint8_t *data)
 {
 #ifdef ARDUINO
 	// code please ...
@@ -488,7 +518,7 @@ void AMC6821::write_n(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t n_bytes)
 	uint8_t temp[n_bytes + 1];
 	temp[0] = reg;
 	memcpy(temp + 1, data, n_bytes);
-	i2cWrite(addr, temp, 2);
+	i2cWrite(addr, temp, n_bytes + 1);
 #endif
 #endif
 }

@@ -156,10 +156,11 @@ class AMC6821
     void setTachHighLimit(uint16_t limit);
     uint16_t getTachLowLimit(void);
     uint16_t getTachHighLimit(void);
+    uint16_t getStatus(void);
 
     // int16_t readSpeed( fan_control_tach_t fct );
-    uint32_t readRPM(void);
-    void setRPM(uint16_t rpm);
+    uint32_t readTACH(void);
+    void setTACH(uint32_t rpm);
     // void setSpeed( fan_control_tach_t fct, int16_t value );
     // void setRPM( fan_control_tach_t fct, int16_t value );
 

@@ -77,42 +77,50 @@ int main(void) {
 
 //	fan_ctl.setPWMINV();
 	fan_ctl.reset();
-	SysCtlDelay(1000*ulClockMS);
+	SysCtlDelay(2000*ulClockMS);
 	fan_ctl.setPWMINV();
+	SysCtlDelay(20*ulClockMS);
+
 	fan_ctl.setSTART(true);
-	int f;
-	f = fan_ctl.getPWM();
+	SysCtlDelay(20*ulClockMS);
+	fan_ctl.setTACHEN(true);
+
+	SysCtlDelay(20*ulClockMS);
+	//f = fan_ctl.getPWM();
 	//fan_ctl.setDCY(0);
 	fan_ctl.setFDRC(amc6821_fdrc_software_rpm);
-	fan_ctl.setPSV(20);
+	//fan_ctl.setPSV(20);
 
 	UARTprintf("done\n");
 
-	// Loop forever.
-	//
-	uint16_t lbyte = 0;
 	uint16_t local_temp = 0;
 	uint16_t remote_temp = 0;
 	uint16_t x = 0;
 
-	fan_ctl.setDCYLT(0);
-	fan_ctl.setRPM(800);
+	//fan_ctl.setDCYLT(0);
+	fan_ctl.setTACH(1500);
 
-	fan_ctl.setTachHighLimit(2000);
-	fan_ctl.setTachLowLimit(0);
-
+//	fan_ctl.setTachHighLimit(2000);
+//	fan_ctl.setTachLowLimit(0);
+	SysCtlDelay(20*ulClockMS);
 	uint16_t l_limit = fan_ctl.getTachLowLimit();
+	SysCtlDelay(20*ulClockMS);
 	uint16_t h_limit = fan_ctl.getTachHighLimit();
 	UARTprintf("l_limit = %d, h_limit = %d\n", l_limit, h_limit);
+	SysCtlDelay(20*ulClockMS);
 
 	while (1)
 	{
+		//fan_ctl.setPWMINV();
 		fan_ctl.readTemp11bits(local_temp, remote_temp);
 
 		UARTprintf("local tem = %d.%d, remote temp = %d.%d\n", local_temp>>3, (local_temp & 0x0007)*1000/8, remote_temp>>3, (remote_temp & 0x0007)*1000/8);
 
-		x = fan_ctl.readRPM();
+		x = fan_ctl.readTACH();
 		UARTprintf("rpm = %d\n", x);
+
+		x = fan_ctl.getStatus();
+		UARTprintf("status = %x\n", x);
 		SysCtlDelay(1000*ulClockMS);
 
 //		fan_ctl.setPWM((amc6821_pwm_frequency)1);

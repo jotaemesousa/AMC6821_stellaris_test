@@ -343,22 +343,21 @@ void AMC6821::readTemp11bits(uint16_t &local_temp, uint16_t &remote_temp)
 	remote_temp = (lbyte & 0x07) | (remote_hbyte << 3);
 }
 
-uint32_t AMC6821::readRPM(void)
+uint32_t AMC6821::readTACH(void)
 {
 	uint8_t tach[2];
 	read_n(_addr, AMC6821_REG_TDATA_LOW, 2, tach);
 
-	uint32_t num = 6000000;
-	uint32_t denom = (tach[0] | (tach[1] << 8));
-	return num / denom;
+//	uint32_t num = 6000000;
+//	uint32_t denom = );
+	return (tach[0] | (tach[1] << 8));
 }
 
-void AMC6821::setRPM(uint16_t rpm)
+void AMC6821::setTACH(uint32_t ppt)
 {
 	uint8_t tach[2];
-	uint16_t tach_val = 6000000 / rpm;
-	tach[0] = tach_val & 0xFF;
-	tach[1] = (tach_val >> 8) & 0xFF;
+	tach[0] = ppt & 0x000000FF;
+	tach[1] = (ppt >> 8) & 0x000000FF;
 
 	write_n(_addr, AMC6821_REG_TACH_SETTINGL, 2, tach);
 }
@@ -391,6 +390,13 @@ uint16_t AMC6821::getTachHighLimit(void)
 	uint8_t tach_lim[2];
 	read_n(_addr, AMC6821_REG_TACH_HLIMITL, 2, tach_lim);
 	return (tach_lim[0] | (tach_lim[1] << 8));
+}
+
+uint16_t AMC6821::getStatus(void)
+{
+	uint8_t status[2];
+	read_n(_addr, AMC6821_REG_STAT1, 2, status);
+	return (status[0] | (status[1] << 8));
 }
 
 /*

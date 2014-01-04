@@ -98,7 +98,7 @@ int main(void) {
 	uint16_t x = 0;
 
 	//fan_ctl.setDCYLT(0);
-	fan_ctl.setTACH(1500);
+	fan_ctl.setRPM(4000);
 
 //	fan_ctl.setTachHighLimit(2000);
 //	fan_ctl.setTachLowLimit(0);
@@ -116,7 +116,7 @@ int main(void) {
 
 		UARTprintf("local tem = %d.%d, remote temp = %d.%d\n", local_temp>>3, (local_temp & 0x0007)*1000/8, remote_temp>>3, (remote_temp & 0x0007)*1000/8);
 
-		x = fan_ctl.readTACH();
+		x = fan_ctl.readRPM();
 		UARTprintf("rpm = %d\n", x);
 
 		x = fan_ctl.getStatus();

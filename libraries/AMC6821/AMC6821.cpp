@@ -348,8 +348,6 @@ uint32_t AMC6821::readTACH(void)
 	uint8_t tach[2];
 	read_n(_addr, AMC6821_REG_TDATA_LOW, 2, tach);
 
-//	uint32_t num = 6000000;
-//	uint32_t denom = );
 	return (tach[0] | (tach[1] << 8));
 }
 
@@ -361,6 +359,28 @@ void AMC6821::setTACH(uint32_t ppt)
 
 	write_n(_addr, AMC6821_REG_TACH_SETTINGL, 2, tach);
 }
+
+uint32_t AMC6821::readRPM(void)
+{
+	uint8_t tach[2];
+	read_n(_addr, AMC6821_REG_TDATA_LOW, 2, tach);
+
+	uint32_t num = 6000000;
+	uint32_t denom = (tach[0] | (tach[1] << 8));
+	return num/denom;
+
+}
+
+void AMC6821::setRPM(uint32_t rpm)
+{
+	uint8_t tach[2];
+	uint32_t value = 6000000 / rpm;
+	tach[0] = value & 0x000000FF;
+	tach[1] = (value >> 8) & 0x000000FF;
+
+	write_n(_addr, AMC6821_REG_TACH_SETTINGL, 2, tach);
+}
+
 
 void AMC6821::setTachLowLimit(uint16_t limit)
 {
